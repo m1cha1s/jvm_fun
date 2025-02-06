@@ -3,7 +3,7 @@ CFLAGS := -O0 -g
 LDFLAGS := -fsanitize=address -g
 
 EXE := jvm_fun
-SRC := main.c
+SRC := main.c jvm_load_class.c
 OBJ := $(SRC:.c=.o)
 
 $(EXE): $(OBJ)

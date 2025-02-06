@@ -1,6 +1,9 @@
 #include <stdio.h>
 
+#include "jvm.h"
 #include "jvm_common.h"
+#include "jvm_attributes.h"
+#include "jvm_fields.h"
 #include "ms_arena.h"
 
 static inline u32 read_u32(u8 **data) {

@@ -12,10 +12,6 @@
 
 #include "jvm.h"
 
-typedef struct {
-
-} JVM_Class;
-
 int main(int argc, char *argv[]) {
     assert(argc > 1);
 
@@ -23,7 +19,8 @@ int main(int argc, char *argv[]) {
 
     Sized_Buffer class_buf = load_file(argv[1]);
 
-    if (jvm_load_class(&jvm, class_buf)) {
+    JVM_Class_File cf = {0};
+    if (class_file_load(&cf, class_buf)) {
         fprintf(stderr, "Failed to load class!\n");
     }
 

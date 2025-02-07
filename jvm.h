@@ -1,8 +1,14 @@
 #ifndef _JVM_H
 #define _JVM_H
 
+#include <stddef.h>
+
+#include "ms_arena.h"
+
 #include "jvm_common.h"
 #include "jvm_constants.h"
+#include "jvm_fields.h"
+#include "jvm_attributes.h"
 
 typedef struct {
     u8 *data;
@@ -12,9 +18,24 @@ typedef struct {
 Sized_Buffer load_file(char *path);
 
 typedef struct {
-    
+    Arena arena;
+    u16 minor_version;
+    u16 major_version;
+    u16 constant_pool_count;
+    Constant_Info **cp_info;
+    u16 access_flags;
+    u16 this_class;
+    u16 super_class;
+    u16 interfaces_count;
+    u16 *interfaces;
+    u16 fields_count;
+    Field_Info **fields;
+    // TODO: Add more to complete the class file data
+} JVM_Class_File;
+
+typedef struct {
+
 } JVM;
 
-int jvm_load_class(JVM *jvm, Sized_Buffer buf);
-
+int class_file_load(JVM_Class_File *cf, Sized_Buffer buf);
 #endif

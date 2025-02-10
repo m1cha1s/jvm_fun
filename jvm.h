@@ -9,6 +9,7 @@
 #include "jvm_constants.h"
 #include "jvm_fields.h"
 #include "jvm_attributes.h"
+#include "jvm_methods.h"
 
 typedef struct {
     u8 *data;
@@ -30,7 +31,10 @@ typedef struct {
     u16 *interfaces;
     u16 fields_count;
     Field_Info **fields;
-    // TODO: Add more to complete the class file data
+    u16 methods_count;
+    Method_Info **methods;
+    u16 attributes_count;
+    Attribute_Info **attributes;
 } JVM_Class_File;
 
 typedef struct {

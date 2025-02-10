@@ -45,7 +45,7 @@ Attribute_Info *class_file_load_attribute(JVM_Class_File *cf, u8 **rptr) {
     ai->attribute_length = attribute_length;
     ai->type = ATTR_Unknown;
 
-    Constant_Utf8_Info *attr_name = (Constant_Utf8_Info*)cf->cp_info[attribute_name_index];
+    Constant_Utf8_Info *attr_name = (Constant_Utf8_Info*)(cf->cp_info[attribute_name_index]);
     if (strncmp("ConstantValue", attr_name->bytes, attr_name->length) == 0) {
         ai->type = ATTR_ConstantValue;
         printf("Constant\n");
@@ -70,6 +70,11 @@ Attribute_Info *class_file_load_attribute(JVM_Class_File *cf, u8 **rptr) {
         ci->attributes_count = read_u16(rptr);
         ci->attributes = arena_alloc(&cf->arena, sizeof(Attribute_Info*)*ci->attributes_count);
         for (u16 i = 0; i < ci->attributes_count; ++i) ci->attributes[i] = class_file_load_attribute(cf, rptr);
+    } else {
+        // This is a stub to not break the reading of the class file;
+        for (u32 i = 0; i < attribute_length; ++i) {
+            (void)read_u8(rptr);
+        }
     }
 
     return ai;
@@ -210,7 +215,7 @@ int class_file_load(JVM_Class_File *cf, Sized_Buffer buf) {
     for (u16 i = 0; i < cf->interfaces_count; ++i) cf->interfaces[i] = read_u16(&rptr);
 
     cf->fields_count = read_u16(&rptr);
-    Field_Info **fields = arena_alloc(&cf->arena, sizeof(Field_Info*)*cf->fields_count);
+    cf->fields = arena_alloc(&cf->arena, sizeof(Field_Info*)*cf->fields_count);
     for (u16 i = 0; i < cf->fields_count; ++i) {
         Field_Info *f = arena_alloc(&cf->arena, sizeof(Field_Info));
         cf->fields[i] = f;
@@ -227,7 +232,28 @@ int class_file_load(JVM_Class_File *cf, Sized_Buffer buf) {
         }
     }
 
-    
+    cf->methods_count = read_u16(&rptr);
+    cf->methods = arena_alloc(&cf->arena, sizeof(Method_Info*)*(cf->methods_count));
+    for (u16 i = 0; i < cf->methods_count; ++i) {
+        Method_Info *m = arena_alloc(&cf->arena, sizeof(Method_Info));
+        cf->methods[i] = m;
+
+        m->access_flags = read_u16(&rptr);
+        m->name_index = read_u16(&rptr);
+        m->descriptor_index = read_u16(&rptr);
+        m->attributes_count = read_u16(&rptr);
+        m->attributes = arena_alloc(&cf->arena, sizeof(Attribute_Info*)*m->attributes_count);
+        for (u16 j = 0; j < m->attributes_count; ++j) {
+            m->attributes[j] = class_file_load_attribute(cf, &rptr);
+        }
+    }
+
+    cf->attributes_count = read_u16(&rptr);
+    cf->attributes = arena_alloc(&cf->arena, sizeof(Attribute_Info*)*cf->attributes_count);
+
+    for (u16 i = 0; i < cf->attributes_count; ++i) {
+        cf->attributes[i] = class_file_load_attribute(cf, &rptr);
+    }
 
     return 0;
 }

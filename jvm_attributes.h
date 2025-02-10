@@ -40,4 +40,11 @@ typedef struct {
   Attribute_Info **attributes;
 } Attribute_Code_Info;
 
+// typedef struct {
+//   u16 attribute_name_index;
+//   u32 attribute_length;
+  // u16 number_of_entries;
+  
+// } Attribute_StackMapTable_Info;
+
 #endif

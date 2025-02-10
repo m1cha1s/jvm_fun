@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 #include "jvm.h"
 #include "jvm_common.h"
@@ -35,7 +36,43 @@ static u8 read_u8(u8 **data) {
 }
 
 Attribute_Info *class_file_load_attribute(JVM_Class_File *cf, u8 **rptr) {
+    u16 attribute_name_index = read_u16(rptr);
+    u32 attribute_length = read_u32(rptr);
     
+    Attribute_Info *ai = arena_alloc(&cf->arena, sizeof(u16)+sizeof(Attribute_Type)+sizeof(u32)+attribute_length);
+
+    ai->attribute_name_index = attribute_name_index;
+    ai->attribute_length = attribute_length;
+    ai->type = ATTR_Unknown;
+
+    Constant_Utf8_Info *attr_name = (Constant_Utf8_Info*)cf->cp_info[attribute_name_index];
+    if (strncmp("ConstantValue", attr_name->bytes, attr_name->length) == 0) {
+        ai->type = ATTR_ConstantValue;
+        printf("Constant\n");
+
+        Attribute_ConstantValue_Info *cv = (Attribute_ConstantValue_Info*)ai;
+        cv->constant_value_index = read_u16(rptr);
+    }
+    else if (strncmp("Code", attr_name->bytes, attr_name->length) == 0) {
+        ai->type = ATTR_Code;
+        printf("Code\n");
+
+        Attribute_Code_Info *ci = (Attribute_Code_Info*)ai;
+
+        ci->max_stack = read_u16(rptr);
+        ci->max_locals = read_u16(rptr);
+        ci->code_length = read_u32(rptr);
+        ci->code = arena_alloc(&cf->arena, ci->code_length*sizeof(u8));
+        for (u32 i = 0; i < ci->code_length; ++i) ci->code[i] = read_u8(rptr);
+        ci->exception_table_length = read_u16(rptr);
+        ci->exception_table = arena_alloc(&cf->arena, sizeof(Exception_Info)*ci->exception_table_length);
+        for (u16 i = 0; i < ci->exception_table_length; ++i) ci->exception_table[i] = (Exception_Info){read_u16(rptr),read_u16(rptr),read_u16(rptr),read_u16(rptr)};
+        ci->attributes_count = read_u16(rptr);
+        ci->attributes = arena_alloc(&cf->arena, sizeof(Attribute_Info*)*ci->attributes_count);
+        for (u16 i = 0; i < ci->attributes_count; ++i) ci->attributes[i] = class_file_load_attribute(cf, rptr);
+    }
+
+    return ai;
 }
 
 int class_file_load(JVM_Class_File *cf, Sized_Buffer buf) {
@@ -185,9 +222,12 @@ int class_file_load(JVM_Class_File *cf, Sized_Buffer buf) {
         f->attributes_count = read_u16(&rptr);
         f->attributes = arena_alloc(&cf->arena, sizeof(Attribute_Info*)*f->attributes_count);
         for (u16 j = 0; j < f->attributes_count; ++j) {
+            printf("foo\n");
             f->attributes[j] = class_file_load_attribute(cf, &rptr);
         }
     }
+
+    
 
     return 0;
 }
